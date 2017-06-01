@@ -118,8 +118,12 @@ double log_likelihood_tempered(
 	bool debug
 )
 {
-	//std::cout << "Bayesian = " << bayesian << std::endl;
-	//std::cout << "Temperature = " << temperature << std::endl;
+	/*
+	std::cout << "Bayesian = " << bayesian << std::endl;
+	std::cout << "Temperature = " << temperature << std::endl;
+	std::cout << "Data_1: " << data_1.rows() << std::endl;
+	std::cout << "Data_2: " << data_2.rows() << std::endl;  
+	*/
 	Eigen::VectorXd projected_theta = theta_projection_mat*theta;
 	Eigen::VectorXd theta_int = projected_theta.topRows(interior.rows());
 	Eigen::VectorXd theta_sens = projected_theta.segment(interior.rows(), sensors.rows());
@@ -139,7 +143,8 @@ double log_likelihood_tempered(
 		posterior = collocate_no_obs(augmented_sens, augmented_int, augmented_sens, kernel_args);
 
 	Eigen::VectorXd rhs = Eigen::VectorXd::Zero(posterior->mu_mult.cols());
-	Eigen::MatrixXd likelihood_cov = likelihood_variance*Eigen::MatrixXd::Identity(data_1.cols(), data_1.cols());
+	int n_meas = stim_pattern.rows();
+	Eigen::MatrixXd likelihood_cov = likelihood_variance*Eigen::MatrixXd::Identity(n_meas, n_meas);
 	if(bayesian) {
 		likelihood_cov += meas_pattern*posterior->cov*meas_pattern.transpose();
 	}
@@ -155,8 +160,7 @@ double log_likelihood_tempered(
 	for(int i = 0; i < L.rows(); i++)
 		halflogdet += log(L(i,i));
 	double halflog2pi = 0.5*log(2*M_PI);
-	// NB ASSUMES THAT data_1 AND data_2 HAVE THE SAME ROWS!
-	double log_norm_const = -halflog2pi*data_1.cols() - halflogdet;
+	double log_norm_const = -halflog2pi*n_meas - halflogdet;
 
 	#ifdef WITH_DEBUG
 	if(debug)
@@ -173,15 +177,11 @@ double log_likelihood_tempered(
 
 			double this_likelihood = -0.5*residual.dot(likelihood_cov_decomp.solve(residual)) + log_norm_const;
 			likelihood_1 += this_likelihood;
-			#ifdef WITH_DEBUG
-			if(debug)
-				std::cout << this_likelihood << std::endl;
-			#endif
 		}
+		//std::cout << "Likelihood 1 " << likelihood_1 << std::endl;
 	}
 
 
-	log_norm_const = -halflog2pi*data_2.cols() - halflogdet;
 	if(temperature > 0 && data_2.rows() > 0) {
 		for(int i = 0; i < data_2.rows(); i++) {
 			rhs.bottomRows(stim_pattern.cols()) = stim_pattern.row(i).transpose();
@@ -189,11 +189,8 @@ double log_likelihood_tempered(
 
 			double this_likelihood = -0.5*residual.dot(likelihood_cov_decomp.solve(residual)) + log_norm_const;
 			likelihood_2 += this_likelihood;
-			#ifdef WITH_DEBUG
-			if(debug)
-				std::cout << this_likelihood << std::endl;
-			#endif
 		}
+		//std::cout << "Likelihood 2 " << likelihood_2 << std::endl;
 	}
 	return likelihood_1*(1-temperature) + likelihood_2*temperature;
 }
