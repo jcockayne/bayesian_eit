@@ -2,8 +2,7 @@ import bayesian_pdes as bpdes
 import numpy as np
 from scipy import stats
 import mcmc
-import collocate
-import simulate
+from . import collocate, simulate
 
 import contextlib
 
@@ -90,7 +89,7 @@ def phi(grid, op_system, theta, likelihood_variance, pattern, data, collocate_ar
     likelihood_dist = stats.multivariate_normal(np.zeros(Sigma_obs.shape[0]), likelihood_cov)
 
     if debug:
-        print likelihood_cov
+        print(likelihood_cov)
 
     likelihood = 0
     for voltage, current in zip(data, pattern.stim_pattern):

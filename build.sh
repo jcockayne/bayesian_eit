@@ -1,4 +1,7 @@
+rm -r cpp/build;
+mkdir cpp/build;
 cd cpp/build;
-make;
+cmake ..;
+make -j8;
 cd ../../python;
 python setup.py clean --all develop;

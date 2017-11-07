@@ -1,5 +1,2 @@
-import grids
-from helpers import pol2cart, cart2pol
-import pcn_kernel
-import op_wrapper
-import collocate
+from . import grids, pcn_kernel, op_wrapper, collocate
+from .helpers import pol2cart, cart2pol

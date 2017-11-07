@@ -1,4 +1,4 @@
-from helpers import pol2cart
+from .helpers import pol2cart
 import numpy as np
 
 class EITPattern(object):
