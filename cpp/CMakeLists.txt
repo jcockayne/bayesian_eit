@@ -1,13 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Choose the type of build, options are: Debug Release
-RelWithDebInfo MinSizeRel."
-      FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-
 option(CMCMC_TESTS "Build tests with CMCMC" OFF)
 add_subdirectory(external/cmcmc)
 
@@ -33,7 +26,7 @@ include_directories(${EIGEN3_INCLUDE_DIRS})
 #include_directories(/usr/local/include/eigen3)
 file(GLOB SOURCES "src/*.cpp")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DENABLE_LOG_ERROR -DENABLE_LOG_WARN -DENABLE_LOG_INFO")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DENABLE_LOG_ERROR -DENABLE_LOG_WARN -DENABLE_LOG_INFO -DENABLE_LOG_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DENABLE_LOG_ERROR -DENABLE_LOG_WARN -DENABLE_LOG_INFO")
 
 add_library(eit STATIC ${SOURCES})

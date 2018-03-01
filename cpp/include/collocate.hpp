@@ -16,6 +16,7 @@ public:
 	std::unique_ptr<CollocationResult> collocate_no_obs(
 		const Eigen::Ref<const Eigen::MatrixXd> &x,
 		const Eigen::Ref<const Eigen::MatrixXd> &interior, 
+		const Eigen::Ref<const Eigen::MatrixXd> &boundary, 
 		const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 		const Eigen::Ref<const Eigen::VectorXd> &kernel_args
 	);
@@ -28,6 +29,7 @@ private:
 std::unique_ptr<CollocationResult> collocate_no_obs(
 	const Eigen::Ref<const Eigen::MatrixXd> &x,
 	const Eigen::Ref<const Eigen::MatrixXd> &interior, 
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary, 
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &kernel_args
 );

@@ -13,29 +13,34 @@ def printoptions(*args, **kwargs):
     yield 
     np.set_printoptions(**original)
 
-def theta_to_a(theta, sz_int, sz_bdy, proposal_dot_mat):
+def theta_to_a(theta, grid, proposal_dot_mat):
     theta = np.real_if_close(theta)
     theta_mod = np.dot(proposal_dot_mat, theta[:,None])
+    sz_int = len(grid.interior)
+    sz_bdy = len(grid.boundary)
+    sz_sensor = len(grid.sensors)
     kappa_int = theta_mod[:sz_int]
     kappa_bdy = theta_mod[sz_int:sz_int+sz_bdy]
-    grad_kappa_x = theta_mod[sz_int+sz_bdy:2*sz_int+sz_bdy]
-    grad_kappa_y = theta_mod[2*sz_int+sz_bdy:]
-    return kappa_int, kappa_bdy, grad_kappa_x, grad_kappa_y
+    kappa_sensor = theta_mod[sz_int+sz_bdy:sz_int+sz_bdy+sz_sensor]
+    grad_kappa_x = theta_mod[sz_int+sz_bdy+sz_sensor:2*sz_int+sz_bdy+sz_sensor]
+    grad_kappa_y = theta_mod[2*sz_int+sz_bdy+sz_sensor:]
+    return kappa_int, kappa_bdy, kappa_sensor, grad_kappa_x, grad_kappa_y
 
 
 def construct_posterior(grid, op_system, theta, collocate_args, proposal_dot_mat, debug=False):
-    design_int = grid.interior_plus_boundary
-    a_int, a_bdy, a_x, a_y = theta_to_a(theta,
-                                        design_int.shape[0],
-                                        grid.sensors.shape[0],
-                                        proposal_dot_mat
-                                        )
+    design_int = grid.interior
+    a_int, a_bdy, a_sensor, a_x, a_y = theta_to_a(theta,
+                                                  grid,
+                                                  proposal_dot_mat
+                                                  )
 
     augmented_int = np.column_stack([design_int, a_int, a_x, a_y])
-    augmented_bdy = np.column_stack([grid.sensors, a_bdy, np.nan * np.zeros((a_bdy.shape[0], 2))])
+    augmented_bdy = np.column_stack([grid.bdy, a_bdy, np.nan * np.zeros((a_bdy.shape[0], 2))])
+    augmented_sens = np.column_stack([grid.sensors, a_sensor, np.nan * np.zeros((a_sensor.shape[0], 2))])
     obs = [
         (augmented_int, None),
-        (augmented_bdy, None)
+        (augmented_bdy, None),
+        (augmented_sensor, None)
     ]
     posterior = bpdes.collocate(
         op_system.operators,
@@ -48,19 +53,22 @@ def construct_posterior(grid, op_system, theta, collocate_args, proposal_dot_mat
     return posterior
 
 def construct_c_posterior(locations, grid, theta, collocate_args, proposal_dot_mat, debug=False):
-    design_int = grid.interior_plus_boundary
-    a_int, a_bdy, a_x, a_y = theta_to_a(theta,
-                                        design_int.shape[0],
-                                        grid.sensors.shape[0],
-                                        proposal_dot_mat
-                                        )
-
-    augmented_int = np.column_stack([design_int, a_int, a_x, a_y])
-    augmented_bdy = np.column_stack([grid.sensors, a_bdy, np.nan * np.zeros((a_bdy.shape[0], 2))])
+    a_int, a_bdy, a_sensor, a_x, a_y = theta_to_a(theta,
+                                                  grid,
+                                                  proposal_dot_mat
+                                                  )
+    assert a_int.shape[0] == grid.interior.shape[0]
+    assert a_x.shape[0] == grid.interior.shape[0]
+    assert a_y.shape[0] == grid.interior.shape[0]
+    
+    augmented_int = np.column_stack([grid.interior, a_int, a_x, a_y])
+    augmented_bdy = np.column_stack([grid.boundary, a_bdy, np.nan * np.zeros((a_bdy.shape[0], 2))])
+    augmented_sens = np.column_stack([grid.sensors, a_sensor, np.nan * np.zeros((a_sensor.shape[0], 2))])
     mu_mult, Sigma = collocate.collocate_no_obs(
         np.asfortranarray(locations),
         np.asfortranarray(augmented_int),
         np.asfortranarray(augmented_bdy),
+        np.asfortranarray(augmented_sens),
         np.asfortranarray(collocate_args)
     )
     return mu_mult, Sigma
@@ -109,7 +117,8 @@ def phi(grid, op_system, theta, likelihood_variance, pattern, data, collocate_ar
 
 def phi_c(grid, theta, likelihood_variance, pattern, data, collocate_args, proposal_dot_mat, bayesian=True, debug=False):
     return -collocate.log_likelihood(
-        np.asfortranarray(grid.interior_plus_boundary),
+        np.asfortranarray(grid.interior),
+        np.asfortranarray(grid.boundary),
         np.asfortranarray(grid.sensors),
         np.asfortranarray(theta),
         np.asfortranarray(proposal_dot_mat),
@@ -123,7 +132,8 @@ def phi_c(grid, theta, likelihood_variance, pattern, data, collocate_args, propo
     )
 def phi_c_tempered(grid, theta, likelihood_variance, pattern, data_1, data_2, temp, collocate_args, proposal_dot_mat, bayesian=True, debug=False):
     return -collocate.log_likelihood_tempered(
-        np.asfortranarray(grid.interior_plus_boundary),
+        np.asfortranarray(grid.interior),
+        np.asfortranarray(grid.boundary),
         np.asfortranarray(grid.sensors),
         np.asfortranarray(theta),
         np.asfortranarray(proposal_dot_mat),
@@ -190,7 +200,8 @@ class PCNKernel_C(object):
             np.asfortranarray(kappa_0),
             np.asfortranarray(self.__prior_mean__),
             np.asfortranarray(self.__sqrt_prior_cov__),
-            np.asfortranarray(self.__grid__.interior_plus_boundary),
+            np.asfortranarray(self.__grid__.interior),
+            np.asfortranarray(self.__grid__.boundary),
             np.asfortranarray(self.__grid__.sensors),
             np.asfortranarray(self.__proposal_dot_mat__),
             np.asfortranarray(self.collocate_args),
@@ -249,7 +260,8 @@ class PCNTemperingKernel_C(object):
             np.asfortranarray(kappa_0),
             np.asfortranarray(self.__prior_mean__),
             np.asfortranarray(self.__sqrt_prior_cov__),
-            np.asfortranarray(self.__grid__.interior_plus_boundary),
+            np.asfortranarray(self.__grid__.interior),
+            np.asfortranarray(self.__grid__.boundary),
             np.asfortranarray(self.__grid__.sensors),
             np.asfortranarray(self.__proposal_dot_mat__),
             np.asfortranarray(self.__collocate_args__),

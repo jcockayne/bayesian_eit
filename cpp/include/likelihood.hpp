@@ -4,6 +4,7 @@
 
 double log_likelihood(
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &theta,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
@@ -18,6 +19,7 @@ double log_likelihood(
 
 double log_likelihood(
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &theta,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
@@ -33,6 +35,7 @@ double log_likelihood(
 
 double log_likelihood_tempered(	
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &theta,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
@@ -49,6 +52,7 @@ double log_likelihood_tempered(
 
 double log_likelihood_tempered(	
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &theta,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,

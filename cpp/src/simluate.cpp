@@ -12,6 +12,7 @@ std::unique_ptr<SimulateResult> run_pcn_parallel(
 	const Eigen::Ref<const Eigen::VectorXd> &prior_mean,
 	const Eigen::Ref<const Eigen::MatrixXd> &sqrt_prior_cov,
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
 	const Eigen::Ref<const Eigen::VectorXd> &kernel_args,
@@ -31,6 +32,7 @@ std::unique_ptr<SimulateResult> run_pcn_parallel(
 		prior_mean,
 		sqrt_prior_cov,
 		interior,
+		boundary,
 		sensors,
 		theta_projection_mat,
 		kernel_args,
@@ -52,7 +54,8 @@ std::unique_ptr<SimulateResult> run_pcn_parallel_tempered(
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_0,
 	const Eigen::Ref<const Eigen::VectorXd> &prior_mean,
 	const Eigen::Ref<const Eigen::MatrixXd> &sqrt_prior_cov,
-	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &interior,	
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
 	const Eigen::Ref<const Eigen::VectorXd> &kernel_args,
@@ -74,10 +77,11 @@ std::unique_ptr<SimulateResult> run_pcn_parallel_tempered(
 	#pragma omp parallel for num_threads(n_threads)
 	for(int i = 0; i < theta_0.rows(); i++) {
 
-		Collocator *collocator = new Collocator(sensors, interior.rows() + sensors.rows(), kernel_args);
+		Collocator *collocator = new Collocator(sensors, interior.rows() + boundary.rows() + sensors.rows(), kernel_args);
 
 		auto log_likelihood_function = [
 			interior, 
+			boundary,
 			sensors, 
 			theta_projection_mat, 
 			kernel_args, 
@@ -91,7 +95,8 @@ std::unique_ptr<SimulateResult> run_pcn_parallel_tempered(
 			bayesian
 		] (const Eigen::VectorXd &theta) -> double {
 			return log_likelihood_tempered(
-				interior, 
+				interior,
+				boundary, 
 				sensors, 
 				theta, 
 				theta_projection_mat,

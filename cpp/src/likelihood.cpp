@@ -4,8 +4,12 @@
 #include "likelihood.hpp"
 #include <iostream>
 #include <fstream>
+#include "logging/logging.hpp"
+#include "debug.hpp"
+
 double log_likelihood(
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &theta,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
@@ -20,6 +24,7 @@ double log_likelihood(
 {
 	return log_likelihood(
 		interior,
+		boundary,
 		sensors,
 		theta,
 		theta_projection_mat,
@@ -36,6 +41,7 @@ double log_likelihood(
 
 double log_likelihood(
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &theta,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
@@ -51,6 +57,7 @@ double log_likelihood(
 {
 	return log_likelihood_tempered(
 		interior,
+		boundary,
 		sensors,
 		theta,
 		theta_projection_mat,
@@ -69,6 +76,7 @@ double log_likelihood(
 
 double log_likelihood_tempered(
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &theta,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
@@ -85,6 +93,7 @@ double log_likelihood_tempered(
 {
 	return log_likelihood_tempered(
 		interior,
+		boundary,
 		sensors,
 		theta,
 		theta_projection_mat,
@@ -103,6 +112,7 @@ double log_likelihood_tempered(
 
 double log_likelihood_tempered(
 	const Eigen::Ref<const Eigen::MatrixXd> &interior,
+	const Eigen::Ref<const Eigen::MatrixXd> &boundary,
 	const Eigen::Ref<const Eigen::MatrixXd> &sensors,
 	const Eigen::Ref<const Eigen::VectorXd> &theta,
 	const Eigen::Ref<const Eigen::MatrixXd> &theta_projection_mat,
@@ -118,29 +128,44 @@ double log_likelihood_tempered(
 	bool debug
 )
 {
+	DEBUG_FUNCTION_ENTER;
 	/*
 	std::cout << "Bayesian = " << bayesian << std::endl;
 	std::cout << "Temperature = " << temperature << std::endl;
 	std::cout << "Data_1: " << data_1.rows() << std::endl;
 	std::cout << "Data_2: " << data_2.rows() << std::endl;  
 	*/
+	int counter = 0;
 	Eigen::VectorXd projected_theta = theta_projection_mat*theta;
-	Eigen::VectorXd theta_int = projected_theta.topRows(interior.rows());
-	Eigen::VectorXd theta_sens = projected_theta.segment(interior.rows(), sensors.rows());
-	Eigen::VectorXd theta_x = projected_theta.segment(interior.rows() + sensors.rows(), interior.rows());
+	Eigen::VectorXd theta_int = projected_theta.topRows(interior.rows()); counter += theta_int.rows();
+	Eigen::VectorXd theta_bdy = projected_theta.middleRows(counter, boundary.rows()); counter += theta_bdy.rows();
+	Eigen::VectorXd theta_sens = projected_theta.middleRows(counter, sensors.rows()); counter += theta_sens.rows();
+	Eigen::VectorXd theta_x = projected_theta.segment(counter, interior.rows());
 	Eigen::VectorXd theta_y = projected_theta.bottomRows(interior.rows());
 
+	LOG_DEBUG("Calculated theta.");
 	// augment the interior, sensors with theta
 	Eigen::MatrixXd augmented_int(interior.rows(), 5);
 	augmented_int << interior, theta_int, theta_x, theta_y;
+	Eigen::MatrixXd augmented_bdy(boundary.rows(), 5);
+	augmented_bdy.leftCols(3) << boundary, theta_bdy;
 	Eigen::MatrixXd augmented_sens(sensors.rows(), 5);
-	augmented_sens << sensors, theta_sens;
+	augmented_sens.leftCols(3) << sensors, theta_sens;
 	
+
+	LOG_DEBUG("Augmented input points.");
+
 	std::unique_ptr<CollocationResult> posterior;
-	if(collocator != NULL)
-		posterior = collocator->collocate_no_obs(augmented_sens, augmented_int, augmented_sens, kernel_args);
-	else
-		posterior = collocate_no_obs(augmented_sens, augmented_int, augmented_sens, kernel_args);
+	if(collocator != NULL) {
+		LOG_DEBUG("Collocator is not null.");
+		posterior = collocator->collocate_no_obs(augmented_sens, augmented_int, augmented_bdy, augmented_sens, kernel_args);
+	}
+	else {
+		LOG_DEBUG("Collocator is null.");
+		posterior = collocate_no_obs(augmented_sens, augmented_int, augmented_bdy, augmented_sens, kernel_args);
+	}
+
+	LOG_DEBUG("Called collocate.");
 
 	Eigen::VectorXd rhs = Eigen::VectorXd::Zero(posterior->mu_mult.cols());
 	int n_meas = stim_pattern.rows();
@@ -162,10 +187,7 @@ double log_likelihood_tempered(
 	double halflog2pi = 0.5*log(2*M_PI);
 	double log_norm_const = -halflog2pi*n_meas - halflogdet;
 
-	#ifdef WITH_DEBUG
-	if(debug)
-		std::cout << log_norm_const << std::endl;
-	#endif
+	LOG_DEBUG("Log normalising constant = " << log_norm_const);
 
 	Eigen::MatrixXd left_model_mult = meas_pattern * posterior->mu_mult;
 	double likelihood_1 = 0;
@@ -192,5 +214,6 @@ double log_likelihood_tempered(
 		}
 		//std::cout << "Likelihood 2 " << likelihood_2 << std::endl;
 	}
+	DEBUG_FUNCTION_EXIT;
 	return likelihood_1*(1-temperature) + likelihood_2*temperature;
 }

@@ -1,5 +1,7 @@
 #include <Eigen/Core>
 #include "operators.hpp"
+#include "logging/logging.hpp"
+#include "debug.hpp"
 
 Eigen::MatrixXd Id_Id(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::Ref<const Eigen::MatrixXd> &yarg, const Eigen::Ref<const Eigen::VectorXd> &args) {
     Eigen::MatrixXd ret(xarg.rows(), yarg.rows());
@@ -8,6 +10,10 @@ Eigen::MatrixXd Id_Id(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen
 }
 
 void Id_Id(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::Ref<const Eigen::MatrixXd> &yarg, const Eigen::Ref<const Eigen::VectorXd> &args, Eigen::Ref<Eigen::MatrixXd> ret) {
+    DEBUG_FUNCTION_ENTER;
+    LOG_DEBUG(__FUNCTION__ << ": xarg shape (" << xarg.rows() << "," << xarg.cols() << "), " << 
+        "yarg shape (" << yarg.rows() << "," << yarg.cols() << "), " << 
+        "ret shape (" << ret.rows() << "," << ret.cols() << ")");
     double l = args(0);
     double sigma = args(1);
 
@@ -38,18 +44,18 @@ Eigen::MatrixXd Id_A(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen:
 }
 
 void Id_A(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::Ref<const Eigen::MatrixXd> &yarg, const Eigen::Ref<const Eigen::VectorXd> &args, Eigen::Ref<Eigen::MatrixXd> ret) {
+    DEBUG_FUNCTION_ENTER;
+    LOG_DEBUG(__FUNCTION__ << ": xarg shape (" << xarg.rows() << "," << xarg.cols() << "), " << 
+        "yarg shape (" << yarg.rows() << "," << yarg.cols() << "), " << 
+        "ret shape (" << ret.rows() << "," << ret.cols() << ")");
     double l = args(0);
     double sigma = args(1);
-
     
     double l2 = l*l;
     double l2mul = 1./l2;
     for(int i = 0; i < xarg.rows(); i++) {
         double x = xarg(i, 0);
         double y = xarg(i, 1);
-        double a = xarg(i, 2);
-        double a_x = xarg(i, 3);
-        double a_y = xarg(i, 4);
 
         for(int j = 0; j < yarg.rows(); j++) {
             double xbar = yarg(j, 0);
@@ -77,6 +83,10 @@ Eigen::MatrixXd Id_B(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen:
 }
 
 void Id_B(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::Ref<const Eigen::MatrixXd> &yarg, const Eigen::Ref<const Eigen::VectorXd> &args, Eigen::Ref<Eigen::MatrixXd> ret) {
+    DEBUG_FUNCTION_ENTER;
+    LOG_DEBUG(__FUNCTION__ << ": xarg shape (" << xarg.rows() << "," << xarg.cols() << "), " << 
+        "yarg shape (" << yarg.rows() << "," << yarg.cols() << "), " << 
+        "ret shape (" << ret.rows() << "," << ret.cols() << ")");
     double l = args(0);
     double sigma = args(1);
 
@@ -86,9 +96,6 @@ void Id_B(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::Ref<const 
     for(int i = 0; i < xarg.rows(); i++) {
         double x = xarg(i, 0);
         double y = xarg(i, 1);
-        double a = xarg(i, 2);
-        double a_x = xarg(i, 3);
-        double a_y = xarg(i, 4);
 
         for(int j = 0; j < yarg.rows(); j++) {
             double xbar = yarg(j, 0);
@@ -116,6 +123,10 @@ Eigen::MatrixXd A_A(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::
 }
 
 void A_A(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::Ref<const Eigen::MatrixXd> &yarg, const Eigen::Ref<const Eigen::VectorXd> &args, Eigen::Ref<Eigen::MatrixXd> ret) {
+    DEBUG_FUNCTION_ENTER;
+    LOG_DEBUG(__FUNCTION__ << ": xarg shape (" << xarg.rows() << "," << xarg.cols() << "), " << 
+        "yarg shape (" << yarg.rows() << "," << yarg.cols() << "), " << 
+        "ret shape (" << ret.rows() << "," << ret.cols() << ")");
     double l = args(0);
     double sigma = args(1);
 
@@ -166,6 +177,10 @@ Eigen::MatrixXd A_B(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::
 }
 
 void A_B(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::Ref<const Eigen::MatrixXd> &yarg, const Eigen::Ref<const Eigen::VectorXd> &args, Eigen::Ref<Eigen::MatrixXd> ret) {
+    DEBUG_FUNCTION_ENTER;
+    LOG_DEBUG(__FUNCTION__ << ": xarg shape (" << xarg.rows() << "," << xarg.cols() << "), " << 
+        "yarg shape (" << yarg.rows() << "," << yarg.cols() << "), " << 
+        "ret shape (" << ret.rows() << "," << ret.cols() << ")");
     double l = args(0);
     double sigma = args(1);
 
@@ -240,6 +255,10 @@ Eigen::MatrixXd B_B(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::
 }
 
 void B_B(const Eigen::Ref<const Eigen::MatrixXd> &xarg, const Eigen::Ref<const Eigen::MatrixXd> &yarg, const Eigen::Ref<const Eigen::VectorXd> &args, Eigen::Ref<Eigen::MatrixXd> ret) {
+    DEBUG_FUNCTION_ENTER;
+    LOG_DEBUG(__FUNCTION__ << ": xarg shape (" << xarg.rows() << "," << xarg.cols() << "), " << 
+        "yarg shape (" << yarg.rows() << "," << yarg.cols() << "), " << 
+        "ret shape (" << ret.rows() << "," << ret.cols() << ")");
     double l = args(0);
     double sigma = args(1);
 

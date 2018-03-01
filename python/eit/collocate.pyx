@@ -11,6 +11,7 @@ cdef extern from "collocate.hpp":
 	cdef unique_ptr[CollocationResult] _collocate_no_obs "collocate_no_obs"(
 		Map[MatrixXd] x,
 		Map[MatrixXd] interior,
+		Map[MatrixXd] boundary,
 		Map[MatrixXd] sensors,
 		Map[VectorXd] kernel_args
 	)
@@ -18,6 +19,7 @@ cdef extern from "collocate.hpp":
 cdef extern from "likelihood.hpp":
 	cdef double _log_likelihood "log_likelihood"(
 		Map[MatrixXd] interior,
+		Map[MatrixXd] boundary,
 		Map[MatrixXd] sensors,
 		Map[VectorXd] theta,
 		Map[MatrixXd] theta_projection_mat,
@@ -31,6 +33,7 @@ cdef extern from "likelihood.hpp":
 	)
 	cdef double _log_likelihood_tempered "log_likelihood_tempered"(
 		Map[MatrixXd] interior,
+		Map[MatrixXd] boundary,
 		Map[MatrixXd] sensors,
 		Map[VectorXd] theta,
 		Map[MatrixXd] theta_projection_mat,
@@ -48,12 +51,14 @@ cdef extern from "likelihood.hpp":
 def collocate_no_obs(
 	np.ndarray[dtype=np.float_t, ndim=2] x,
 	np.ndarray[dtype=np.float_t, ndim=2] interior,
+	np.ndarray[dtype=np.float_t, ndim=2] boundary,
 	np.ndarray[dtype=np.float_t, ndim=2] sensors,
 	np.ndarray[dtype=np.float_t, ndim=1] kernel_args
 ):
 	cdef unique_ptr[CollocationResult] ret = _collocate_no_obs(
 		Map[MatrixXd](x),
 		Map[MatrixXd](interior),
+		Map[MatrixXd](boundary),
 		Map[MatrixXd](sensors),
 		Map[VectorXd](kernel_args)
 	)
@@ -63,6 +68,7 @@ def collocate_no_obs(
 
 def log_likelihood(
 	np.ndarray[dtype=np.float_t, ndim=2] interior,
+	np.ndarray[dtype=np.float_t, ndim=2] boundary,
 	np.ndarray[dtype=np.float_t, ndim=2] sensors,
 	np.ndarray[dtype=np.float_t, ndim=1] theta,
 	np.ndarray[dtype=np.float_t, ndim=2] theta_projection_mat,
@@ -76,6 +82,7 @@ def log_likelihood(
 ):
 	return _log_likelihood(
 		Map[MatrixXd](interior),
+		Map[MatrixXd](boundary),
 		Map[MatrixXd](sensors),
 		Map[VectorXd](theta),
 		Map[MatrixXd](theta_projection_mat),
@@ -91,6 +98,7 @@ def log_likelihood(
 
 def log_likelihood_tempered(
 	np.ndarray[dtype=np.float_t, ndim=2] interior,
+	np.ndarray[dtype=np.float_t, ndim=2] boundary,
 	np.ndarray[dtype=np.float_t, ndim=2] sensors,
 	np.ndarray[dtype=np.float_t, ndim=1] theta,
 	np.ndarray[dtype=np.float_t, ndim=2] theta_projection_mat,
@@ -106,6 +114,7 @@ def log_likelihood_tempered(
 ):
 	return _log_likelihood_tempered(
 		Map[MatrixXd](interior),
+		Map[MatrixXd](boundary),
 		Map[MatrixXd](sensors),
 		Map[VectorXd](theta),
 		Map[MatrixXd](theta_projection_mat),
