@@ -64,7 +64,15 @@ std::unique_ptr<CollocationResult> Collocator::collocate_no_obs(
     */
     // and lastly build the posterior
     // first invert the central matrix...
-    Eigen::MatrixXd tmp = _central.ldlt().solve(_left.transpose());
+    
+    //Eigen::MatrixXd tmp = _central.ldlt().solve(_left.transpose());
+    
+    //Eigen::JacobiSVD<Eigen::MatrixXd> svd(_central, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    //Eigen::MatrixXd tmp = svd.solve(_left.transpose());
+    
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(_central);
+    Eigen::MatrixXd tmp = qr.solve(_left.transpose());
+    
     Eigen::MatrixXd mu_mult = tmp.transpose();
     Eigen::MatrixXd cov = _kern - mu_mult * _left.transpose();
     LOG_DEBUG("Build posterior.");
