@@ -3,6 +3,12 @@
 
 #ifndef COLLOCATE_H
 
+enum CollocationSolver {
+    LDLT = 1,
+    QR = 2,
+    SVD = 3
+};
+
 class CollocationResult {
 public:
     const Eigen::MatrixXd mu_mult;
@@ -22,7 +28,7 @@ public:
 
 class Collocator {
 public:
-    Collocator(const Eigen::Ref<const Eigen::MatrixXd> &x, int N_collocate, const Eigen::Ref<const Eigen::VectorXd> &kernel_args);
+    Collocator(const Eigen::Ref<const Eigen::MatrixXd> &x, int N_collocate, const Eigen::Ref<const Eigen::VectorXd> &kernel_args, CollocationSolver solver=LDLT);
     std::unique_ptr<CollocationResult> collocate_no_obs(
         const Eigen::Ref<const Eigen::MatrixXd> &x,
         const Eigen::Ref<const Eigen::MatrixXd> &interior, 
@@ -41,6 +47,7 @@ private:
     Eigen::MatrixXd _left;
     Eigen::MatrixXd _central;
     Eigen::MatrixXd _kern;
+    CollocationSolver _solver;
     void build_matrices(
         const Eigen::Ref<const Eigen::MatrixXd> &x,
         const Eigen::Ref<const Eigen::MatrixXd> &interior,
@@ -55,7 +62,8 @@ std::unique_ptr<CollocationResult> collocate_no_obs(
     const Eigen::Ref<const Eigen::MatrixXd> &interior, 
     const Eigen::Ref<const Eigen::MatrixXd> &boundary, 
     const Eigen::Ref<const Eigen::MatrixXd> &sensors,
-    const Eigen::Ref<const Eigen::VectorXd> &kernel_args
+    const Eigen::Ref<const Eigen::VectorXd> &kernel_args,
+    CollocationSolver solver = LDLT
 );
 
 std::unique_ptr<CollocationMatrices> collocate_matrices_no_obs(

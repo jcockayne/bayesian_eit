@@ -210,7 +210,7 @@ class PCNKernel_C(object):
             np.asfortranarray(self.__data__),
             self.__likelihood_variance__,
             n_threads,
-            bayesian
+            bayesian=bayesian
         )
 
 class PCNTemperingKernel_C(object):

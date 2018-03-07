@@ -13,6 +13,7 @@ double log_likelihood(
 	const Eigen::Ref<const Eigen::MatrixXd> &meas_pattern,
 	const Eigen::Ref<const Eigen::MatrixXd> &data,
 	double likelihood_variance,
+	CollocationSolver collocator = LDLT,
 	bool bayesian = false,
 	bool debug = false
 );
@@ -28,7 +29,7 @@ double log_likelihood(
 	const Eigen::Ref<const Eigen::MatrixXd> &meas_pattern,
 	const Eigen::Ref<const Eigen::MatrixXd> &data,
 	double likelihood_variance,
-	Collocator *collocator = NULL,
+	Collocator *collocator,
 	bool bayesian = false,
 	bool debug = false
 );
@@ -46,6 +47,7 @@ double log_likelihood_tempered(
 	const Eigen::Ref<const Eigen::MatrixXd> &data_2,
 	double temperature,
 	double likelihood_variance,
+	CollocationSolver collocator = LDLT,
 	bool bayesian = false,
 	bool debug = false
 );
@@ -63,7 +65,7 @@ double log_likelihood_tempered(
 	const Eigen::Ref<const Eigen::MatrixXd> &data_2,
 	double temperature,
 	double likelihood_variance,
-	Collocator *collocator = NULL,
+	Collocator *collocator,
 	bool bayesian = false,
 	bool debug = false
 );

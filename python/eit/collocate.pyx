@@ -2,6 +2,8 @@ from eigency.core cimport *
 from libcpp.memory cimport unique_ptr
 cimport numpy as np
 from cython.operator cimport dereference as deref
+from collocation_solvers cimport *
+
 
 cdef extern from "collocate.hpp":
 	cdef cppclass CollocationResult:
@@ -18,7 +20,8 @@ cdef extern from "collocate.hpp":
 		Map[MatrixXd] interior,
 		Map[MatrixXd] boundary,
 		Map[MatrixXd] sensors,
-		Map[VectorXd] kernel_args
+		Map[VectorXd] kernel_args,
+		CollocationSolver solver
 	)
 	cdef unique_ptr[CollocationMatrices] _collocate_matrices_no_obs "collocate_matrices_no_obs"(
 		Map[MatrixXd] x,
@@ -40,6 +43,7 @@ cdef extern from "likelihood.hpp":
 		Map[MatrixXd] meas_pattern,
 		Map[MatrixXd] data,
 		double likelihood_variance,
+		CollocationSolver solver,
 		bint bayesian,
 		bint debug
 	)
@@ -56,6 +60,7 @@ cdef extern from "likelihood.hpp":
 		Map[MatrixXd] data_2,
 		double temp,
 		double likelihood_variance,
+		CollocationSolver solver,
 		bint bayesian,
 		bint debug
 	)
@@ -65,14 +70,16 @@ def collocate_no_obs(
 	np.ndarray[dtype=np.float_t, ndim=2] interior,
 	np.ndarray[dtype=np.float_t, ndim=2] boundary,
 	np.ndarray[dtype=np.float_t, ndim=2] sensors,
-	np.ndarray[dtype=np.float_t, ndim=1] kernel_args
+	np.ndarray[dtype=np.float_t, ndim=1] kernel_args,
+	solver="LDLT"
 ):
 	cdef unique_ptr[CollocationResult] ret = _collocate_no_obs(
 		Map[MatrixXd](x),
 		Map[MatrixXd](interior),
 		Map[MatrixXd](boundary),
 		Map[MatrixXd](sensors),
-		Map[VectorXd](kernel_args)
+		Map[VectorXd](kernel_args),
+		solver_to_enum(solver)
 	)
 	mu_mult = ndarray_copy(deref(ret).mu_mult)
 	cov = ndarray_copy(deref(ret).cov)
@@ -108,6 +115,7 @@ def log_likelihood(
 	np.ndarray[dtype=np.float_t, ndim=2] meas_pattern,
 	np.ndarray[dtype=np.float_t, ndim=2] data,
 	double likelihood_variance,
+	solver="LDLT",
 	bint bayesian=True,
 	bint debug=False
 ):
@@ -122,6 +130,7 @@ def log_likelihood(
 		Map[MatrixXd](meas_pattern),
 		Map[MatrixXd](data),
 		likelihood_variance,
+		solver_to_enum(solver),
 		bayesian,
 		debug
 	)
@@ -140,6 +149,7 @@ def log_likelihood_tempered(
 	np.ndarray[dtype=np.float_t, ndim=2] data_2,
 	double temp,
 	double likelihood_variance,
+	solver="LDLT",
 	bint bayesian=True,
 	bint debug=False
 ):
@@ -156,6 +166,7 @@ def log_likelihood_tempered(
 		Map[MatrixXd](data_2),
 		temp,
 		likelihood_variance,
+		solver_to_enum(solver),
 		bayesian,
 		debug
 	)

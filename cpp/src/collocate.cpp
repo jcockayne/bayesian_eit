@@ -8,10 +8,17 @@
 #include "debug.hpp"
 
 
-Collocator::Collocator(const Eigen::Ref<const Eigen::MatrixXd> &x, int N_collocate, const Eigen::Ref<const Eigen::VectorXd> &kernel_args) {
+Collocator::Collocator(
+    const Eigen::Ref<const Eigen::MatrixXd> &x, 
+    int N_collocate, 
+    const Eigen::Ref<const Eigen::VectorXd> &kernel_args, 
+    CollocationSolver solver
+) 
+{
     _kern = Id_Id(x, x, kernel_args);
     _left = Eigen::MatrixXd(x.rows(), N_collocate);
     _central = Eigen::MatrixXd(N_collocate, N_collocate);
+    _solver = solver;
 }
 
 std::unique_ptr<CollocationMatrices> Collocator::get_matrices(
@@ -91,16 +98,30 @@ std::unique_ptr<CollocationResult> Collocator::collocate_no_obs(
     */
     // and lastly build the posterior
     // first invert the central matrix...
+    Eigen::MatrixXd solution;
+    switch(_solver) {
+        case LDLT: 
+        {
+            solution = _central.ldlt().solve(_left.transpose());
+            break;
+        }
+        case QR:
+        {
+            Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(_central);
+            solution = qr.solve(_left.transpose());
+            break;
+        }
+        case SVD:
+        {
+            Eigen::JacobiSVD<Eigen::MatrixXd> svd(_central, Eigen::ComputeThinU | Eigen::ComputeThinV);
+            solution = svd.solve(_left.transpose());
+            break;
+        }
+        default:
+            throw "Solver type not understood!";
+    }
     
-    //Eigen::MatrixXd tmp = _central.ldlt().solve(_left.transpose());
-    
-    //Eigen::JacobiSVD<Eigen::MatrixXd> svd(_central, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    //Eigen::MatrixXd tmp = svd.solve(_left.transpose());
-    
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(_central);
-    Eigen::MatrixXd tmp = qr.solve(_left.transpose());
-    
-    Eigen::MatrixXd mu_mult = tmp.transpose();
+    Eigen::MatrixXd mu_mult = solution.transpose();
     Eigen::MatrixXd cov = _kern - mu_mult * _left.transpose();
     LOG_DEBUG("Build posterior.");
 
@@ -113,10 +134,11 @@ std::unique_ptr<CollocationResult> collocate_no_obs(
     const Eigen::Ref<const Eigen::MatrixXd> &interior, 
     const Eigen::Ref<const Eigen::MatrixXd> &boundary,
     const Eigen::Ref<const Eigen::MatrixXd> &sensors,
-    const Eigen::Ref<const Eigen::VectorXd> &kernel_args
+    const Eigen::Ref<const Eigen::VectorXd> &kernel_args,
+    CollocationSolver solver
 )
 {
-    Collocator collocator(x, interior.rows() + boundary.rows() + sensors.rows(), kernel_args);
+    Collocator collocator(x, interior.rows() + boundary.rows() + sensors.rows(), kernel_args, solver);
     return collocator.collocate_no_obs(x, interior, boundary, sensors, kernel_args);
 }
 

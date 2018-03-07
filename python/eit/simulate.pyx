@@ -4,6 +4,7 @@ import numpy as np
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport unique_ptr
 from libcpp.vector cimport vector
+from collocation_solvers cimport *
 
 cdef extern from "simulate.hpp":
 	cdef cppclass SimulateResult:
@@ -28,6 +29,7 @@ cdef extern from "simulate.hpp":
 		double likelihood_variance,
 		int n_threads,
 		bint return_samples,
+		CollocationSolver solver,
 		bint bayesian
 	)
 	cdef unique_ptr[SimulateResult] _run_pcn_parallel_tempered "run_pcn_parallel_tempered"(
@@ -49,6 +51,7 @@ cdef extern from "simulate.hpp":
 		double likelihood_variance,
 		int n_threads,
 		bint return_samples,
+		CollocationSolver solver,
 		bint bayesian
 	)
 
@@ -68,7 +71,8 @@ def run_pcn_parallel(
 	np.ndarray[ndim=2, dtype=np.float_t] data,
 	double likelihood_variance,
 	int n_threads,
-	bint bayesian
+	solver="LDLT",
+	bint bayesian=True
 ):
 	cdef bint return_samples = theta_0.shape[0] == 1
 	ret = _run_pcn_parallel(
@@ -88,6 +92,7 @@ def run_pcn_parallel(
 		likelihood_variance,
 		n_threads,
 		return_samples,
+		solver_to_enum(solver),
 		bayesian
 	)
 
@@ -116,7 +121,8 @@ def run_pcn_parallel_tempered(
 	double temp,
 	double likelihood_variance,
 	int n_threads,
-	bint bayesian
+	solver="LDLT",
+	bint bayesian=True
 ):
 	cdef bint return_samples = theta_0.shape[0] == 1
 	ret = _run_pcn_parallel_tempered(
@@ -138,6 +144,7 @@ def run_pcn_parallel_tempered(
 		likelihood_variance,
 		n_threads,
 		return_samples,
+		solver_to_enum(solver),
 		bayesian
 	)
 
