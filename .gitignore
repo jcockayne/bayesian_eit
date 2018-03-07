@@ -5,3 +5,4 @@ python/.idea
 *.so
 cpp/build
 cpp/lib
+python/**/*.cpp
