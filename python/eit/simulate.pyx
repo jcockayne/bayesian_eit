@@ -55,6 +55,7 @@ cdef extern from "simulate.hpp":
 		bint bayesian
 	)
 
+@cython.embedsignature(True)
 def run_pcn_parallel(
 	int n_iter,
 	double beta,
@@ -103,6 +104,7 @@ def run_pcn_parallel(
 
 	return ret_samples, ndarray_copy(deref(ret).acceptances), ndarray_copy(deref(ret).log_likelihoods)
 
+@cython.embedsignature(True)
 def run_pcn_parallel_tempered(
 	int n_iter,
 	double beta,

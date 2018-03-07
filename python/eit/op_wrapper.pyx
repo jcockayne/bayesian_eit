@@ -9,20 +9,26 @@ cdef extern from "operators.hpp":
 	MatrixXd c_A_B "A_B"(Map[MatrixXd] &x, Map[MatrixXd] &y, Map[VectorXd] &args)
 	MatrixXd c_B_B "B_B"(Map[MatrixXd] &x, Map[MatrixXd] &y, Map[VectorXd] &args)
 
+@cython.embedsignature(True)
 def Id_Id(np.ndarray[ndim=2, dtype=np.float_t] x, np.ndarray[ndim=2, dtype=np.float_t] y, np.ndarray[ndim=1, dtype=np.float_t] args):
 	return ndarray_copy(c_Id_Id(Map[MatrixXd](x), Map[MatrixXd](y), Map[VectorXd](args)))
 
+@cython.embedsignature(True)
 def Id_A(np.ndarray[ndim=2, dtype=np.float_t] x, np.ndarray[ndim=2, dtype=np.float_t] y, np.ndarray[ndim=1, dtype=np.float_t] args):
 	return ndarray_copy(c_Id_A(Map[MatrixXd](x), Map[MatrixXd](y), Map[VectorXd](args)))
 
+@cython.embedsignature(True)
 def Id_B(np.ndarray[ndim=2, dtype=np.float_t] x, np.ndarray[ndim=2, dtype=np.float_t] y, np.ndarray[ndim=1, dtype=np.float_t] args):
 	return ndarray_copy(c_Id_B(Map[MatrixXd](x), Map[MatrixXd](y), Map[VectorXd](args)))
 
+@cython.embedsignature(True)
 def A_A(np.ndarray[ndim=2, dtype=np.float_t] x, np.ndarray[ndim=2, dtype=np.float_t] y, np.ndarray[ndim=1, dtype=np.float_t] args):
 	return ndarray_copy(c_A_A(Map[MatrixXd](x), Map[MatrixXd](y), Map[VectorXd](args)))
 
+@cython.embedsignature(True)
 def A_B(np.ndarray[ndim=2, dtype=np.float_t] x, np.ndarray[ndim=2, dtype=np.float_t] y, np.ndarray[ndim=1, dtype=np.float_t] args):
 	return ndarray_copy(c_A_B(Map[MatrixXd](x), Map[MatrixXd](y), Map[VectorXd](args)))
 
+@cython.embedsignature(True)
 def B_B(np.ndarray[ndim=2, dtype=np.float_t] x, np.ndarray[ndim=2, dtype=np.float_t] y, np.ndarray[ndim=1, dtype=np.float_t] args):
 	return ndarray_copy(c_B_B(Map[MatrixXd](x), Map[MatrixXd](y), Map[VectorXd](args)))

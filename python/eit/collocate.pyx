@@ -65,6 +65,7 @@ cdef extern from "likelihood.hpp":
 		bint debug
 	)
 
+@cython.embedsignature(True)
 def collocate_no_obs(
 	np.ndarray[dtype=np.float_t, ndim=2] x,
 	np.ndarray[dtype=np.float_t, ndim=2] interior,
@@ -85,6 +86,7 @@ def collocate_no_obs(
 	cov = ndarray_copy(deref(ret).cov)
 	return mu_mult, cov
 
+@cython.embedsignature(True)
 def collocate_matrices_no_obs(
 	np.ndarray[dtype=np.float_t, ndim=2] x,
 	np.ndarray[dtype=np.float_t, ndim=2] interior,
@@ -104,6 +106,7 @@ def collocate_matrices_no_obs(
 	central = ndarray_copy(deref(ret).central)
 	return kern, left, central
 
+@cython.embedsignature(True)
 def log_likelihood(
 	np.ndarray[dtype=np.float_t, ndim=2] interior,
 	np.ndarray[dtype=np.float_t, ndim=2] boundary,
@@ -136,6 +139,7 @@ def log_likelihood(
 	)
 
 
+@cython.embedsignature(True)
 def log_likelihood_tempered(
 	np.ndarray[dtype=np.float_t, ndim=2] interior,
 	np.ndarray[dtype=np.float_t, ndim=2] boundary,
