@@ -14,7 +14,20 @@ Collocator::Collocator(const Eigen::Ref<const Eigen::MatrixXd> &x, int N_colloca
     _central = Eigen::MatrixXd(N_collocate, N_collocate);
 }
 
-std::unique_ptr<CollocationResult> Collocator::collocate_no_obs(
+std::unique_ptr<CollocationMatrices> Collocator::get_matrices(
+    const Eigen::Ref<const Eigen::MatrixXd> &x,
+    const Eigen::Ref<const Eigen::MatrixXd> &interior,
+    const Eigen::Ref<const Eigen::MatrixXd> &boundary,
+    const Eigen::Ref<const Eigen::MatrixXd> &sensors,
+    const Eigen::Ref<const Eigen::VectorXd> &kernel_args
+)
+{
+    build_matrices(x, interior, boundary, sensors, kernel_args);
+    return make_unique<CollocationMatrices>(_kern, _left, _central);
+}
+
+
+void Collocator::build_matrices(
     const Eigen::Ref<const Eigen::MatrixXd> &x,
     const Eigen::Ref<const Eigen::MatrixXd> &interior,
     const Eigen::Ref<const Eigen::MatrixXd> &boundary,
@@ -51,6 +64,20 @@ std::unique_ptr<CollocationResult> Collocator::collocate_no_obs(
     _central.bottomLeftCorner(all_boundary.rows(), interior.rows()) 
         = _central.topRightCorner(interior.rows(), all_boundary.rows()).transpose();
     LOG_DEBUG("Populated matrices.");
+    DEBUG_FUNCTION_EXIT;
+}
+
+
+
+std::unique_ptr<CollocationResult> Collocator::collocate_no_obs(
+    const Eigen::Ref<const Eigen::MatrixXd> &x,
+    const Eigen::Ref<const Eigen::MatrixXd> &interior,
+    const Eigen::Ref<const Eigen::MatrixXd> &boundary,
+    const Eigen::Ref<const Eigen::MatrixXd> &sensors,
+    const Eigen::Ref<const Eigen::VectorXd> &kernel_args
+)
+{
+    build_matrices(x, interior, boundary, sensors, kernel_args);
 
     //Id_Id(x, x, kernel_args, kern);
 
