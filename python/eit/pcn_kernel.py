@@ -272,7 +272,7 @@ class PCNTemperingKernel_C(object):
             self.__temp__,
             self.__likelihood_variance__,
             n_threads,
-            bayesian
+            bayesian=bayesian
         )
 
 class PCNKernel(object):
