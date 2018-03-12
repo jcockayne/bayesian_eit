@@ -1,5 +1,6 @@
 from eigency.core cimport *
 cimport numpy as np
+import cython
 
 cdef extern from "operators.hpp":
 	MatrixXd c_Id_Id "Id_Id"(Map[MatrixXd] &x, Map[MatrixXd] &y, Map[VectorXd] &args)

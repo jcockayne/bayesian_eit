@@ -1,6 +1,7 @@
 from eigency.core cimport *
 cimport numpy as np
 import numpy as np
+import cython
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport unique_ptr
 from libcpp.vector cimport vector
@@ -72,7 +73,7 @@ def run_pcn_parallel(
 	np.ndarray[ndim=2, dtype=np.float_t] data,
 	double likelihood_variance,
 	int n_threads,
-	solver="LDLT",
+	solver=None,
 	bint bayesian=True
 ):
 	cdef bint return_samples = theta_0.shape[0] == 1
@@ -123,7 +124,7 @@ def run_pcn_parallel_tempered(
 	double temp,
 	double likelihood_variance,
 	int n_threads,
-	solver="LDLT",
+	solver=None,
 	bint bayesian=True
 ):
 	cdef bint return_samples = theta_0.shape[0] == 1

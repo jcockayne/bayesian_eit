@@ -71,6 +71,18 @@ void Collocator::build_matrices(
     _central.bottomLeftCorner(all_boundary.rows(), interior.rows()) 
         = _central.topRightCorner(interior.rows(), all_boundary.rows()).transpose();
     LOG_DEBUG("Populated matrices.");
+
+
+    #ifdef ENABLE_LOG_DEBUG
+    auto format = Eigen::IOFormat(Eigen::FullPrecision);
+    std::ofstream file1("central.txt");
+    file1 << _central.format(format);
+    std::ofstream file2("left.txt");
+    file2 << _left.format(format);
+    std::ofstream file3("kern.txt");
+    file3 << _kern.format(format);
+    #endif
+
     DEBUG_FUNCTION_EXIT;
 }
 
@@ -87,19 +99,16 @@ std::unique_ptr<CollocationResult> Collocator::collocate_no_obs(
     build_matrices(x, interior, boundary, sensors, kernel_args);
 
     //Id_Id(x, x, kernel_args, kern);
-
-    /*
-    std::ofstream file1("central.txt");
-    file1 << central;
-    std::ofstream file2("left.txt");
-    file2 << left;
-    std::ofstream file3("kern.txt");
-    file3 << kern;
-    */
+    
     // and lastly build the posterior
     // first invert the central matrix...
     Eigen::MatrixXd solution;
     switch(_solver) {
+        case LU:
+        {
+            solution = _central.fullPivLu().solve(_left.transpose());
+            break;
+        }
         case LDLT: 
         {
             solution = _central.ldlt().solve(_left.transpose());
@@ -108,25 +117,30 @@ std::unique_ptr<CollocationResult> Collocator::collocate_no_obs(
         case QR:
         {
             Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(_central);
-            solution = qr.solve(_left.transpose());
+            solution = _central.colPivHouseholderQr().solve(_left.transpose());
             break;
         }
         case SVD:
         {
-            Eigen::JacobiSVD<Eigen::MatrixXd> svd(_central, Eigen::ComputeThinU | Eigen::ComputeThinV);
-            solution = svd.solve(_left.transpose());
+            solution = _central.jacobiSvd().solve(_left.transpose());
             break;
         }
         default:
             throw "Solver type not understood!";
     }
-    
+    double error_norm = 0;
+    #ifdef ENABLE_LOG_DEBUG
+    {
+        error_norm = (_central*solution - _left.transpose()).norm();
+        LOG_DEBUG("Solution error norm is " << error_norm);
+    }
+    #endif
     Eigen::MatrixXd mu_mult = solution.transpose();
     Eigen::MatrixXd cov = _kern - mu_mult * _left.transpose();
-    LOG_DEBUG("Build posterior.");
+    LOG_DEBUG("Built posterior.");
 
     DEBUG_FUNCTION_EXIT;
-    return make_unique<CollocationResult>(mu_mult, cov);
+    return make_unique<CollocationResult>(mu_mult, cov, error_norm);
 }
 
 std::unique_ptr<CollocationResult> collocate_no_obs(

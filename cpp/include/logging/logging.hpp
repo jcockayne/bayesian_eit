@@ -1,9 +1,10 @@
 //#include "logging/easylogging++.hpp"
 #include <iostream>
 
+#define LOG_MESSAGE(level, message) std::cout << level << " in " << __FUNCTION__ << " (" << __FILE__ << ":" << __LINE__ << ") : " << message << std::endl; 
 #ifdef ENABLE_LOG_TRACE
 	#define LOG_TRACE(x) do { \
-		std::cout << x << std::endl; \
+		LOG_MESSAGE("TRACE", x) \
 	} while (0)
 
 #else
@@ -12,7 +13,7 @@
 
 #ifdef ENABLE_LOG_DEBUG
 	#define LOG_DEBUG(x) do { \
-		std::cout << x << std::endl; \
+		LOG_MESSAGE("DEBUG", x) \
 	} while (0)
 #else
 	#define LOG_DEBUG(x) do {} while (0)
@@ -20,7 +21,7 @@
 
 #ifdef ENABLE_LOG_INFO
 	#define LOG_INFO(x) do { \
-		std::cout << x << std::endl; \
+		LOG_MESSAGE("INFO", x) \
 	} while (0)
 #else
 	#define LOG_INFO(x) do {} while (0)
@@ -28,7 +29,7 @@
 
 #ifdef ENABLE_LOG_WARN
 	#define LOG_WARN(x) do { \
-		std::cout << x << std::endl; \
+		LOG_MESSAGE("WARN", x) \
 	} while (0)
 #else
 	#define LOG_WARN(x) do {} while (0)
@@ -36,7 +37,7 @@
 
 #ifdef ENABLE_LOG_ERROR
 	#define LOG_ERROR(x) do { \
-		std:cerr << x << std::endl; \
+		LOG_MESSAGE("ERROR", x) \
 	} while (0)
 #else
 	#define LOG_ERROR(x) do {} while (0)

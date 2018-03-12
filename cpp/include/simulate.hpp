@@ -31,7 +31,7 @@ std::unique_ptr<SimulateResult> run_pcn_parallel(
     double likelihood_variance,
     int n_threads,
     bool return_samples,
-    CollocationSolver solver=LDLT,
+    CollocationSolver solver=COLLOCATION_SOLVER_DEFAULT,
     bool bayesian=true
 );
 
@@ -54,7 +54,7 @@ std::unique_ptr<SimulateResult> run_pcn_parallel_tempered(
     double likelihood_variance,
     int n_threads,
     bool return_samples,
-    CollocationSolver solver=LDLT,
+    CollocationSolver solver=COLLOCATION_SOLVER_DEFAULT,
     bool bayesian=true
 );
 

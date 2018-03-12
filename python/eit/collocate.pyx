@@ -3,13 +3,14 @@ from libcpp.memory cimport unique_ptr
 cimport numpy as np
 from cython.operator cimport dereference as deref
 from collocation_solvers cimport *
-
+import cython
 
 cdef extern from "collocate.hpp":
 	cdef cppclass CollocationResult:
 		MatrixXd mu_mult
 		MatrixXd cov
-		CollocationResult(MatrixXd mu_mult, MatrixXd cov)
+		double solve_error
+		CollocationResult(MatrixXd mu_mult, MatrixXd cov, double solve_error)
 	cdef cppclass CollocationMatrices:
 		MatrixXd kern;
 		MatrixXd left;
@@ -72,7 +73,8 @@ def collocate_no_obs(
 	np.ndarray[dtype=np.float_t, ndim=2] boundary,
 	np.ndarray[dtype=np.float_t, ndim=2] sensors,
 	np.ndarray[dtype=np.float_t, ndim=1] kernel_args,
-	solver="LDLT"
+	solver=None,
+	bint report_solve_error=False
 ):
 	cdef unique_ptr[CollocationResult] ret = _collocate_no_obs(
 		Map[MatrixXd](x),
@@ -84,6 +86,8 @@ def collocate_no_obs(
 	)
 	mu_mult = ndarray_copy(deref(ret).mu_mult)
 	cov = ndarray_copy(deref(ret).cov)
+	if report_solve_error:
+		return mu_mult, cov, deref(ret).solve_error
 	return mu_mult, cov
 
 @cython.embedsignature(True)
@@ -118,7 +122,7 @@ def log_likelihood(
 	np.ndarray[dtype=np.float_t, ndim=2] meas_pattern,
 	np.ndarray[dtype=np.float_t, ndim=2] data,
 	double likelihood_variance,
-	solver="LDLT",
+	solver=None,
 	bint bayesian=True,
 	bint debug=False
 ):
@@ -153,7 +157,7 @@ def log_likelihood_tempered(
 	np.ndarray[dtype=np.float_t, ndim=2] data_2,
 	double temp,
 	double likelihood_variance,
-	solver="LDLT",
+	solver=None,
 	bint bayesian=True,
 	bint debug=False
 ):
