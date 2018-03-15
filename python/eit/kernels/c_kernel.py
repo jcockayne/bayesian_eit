@@ -1,58 +1,9 @@
-import bayesian_pdes as bpdes
 import numpy as np
-from scipy import stats
-import mcmc
-from . import collocate, simulate
-
-import contextlib
-
-@contextlib.contextmanager
-def printoptions(*args, **kwargs):
-    original = np.get_printoptions()
-    np.set_printoptions(*args, **kwargs)
-    yield 
-    np.set_printoptions(**original)
-
-def theta_to_a(theta, grid, proposal_dot_mat):
-    theta = np.real_if_close(theta)
-    theta_mod = np.dot(proposal_dot_mat, theta[:,None])
-    sz_int = len(grid.interior)
-    sz_bdy = len(grid.boundary)
-    sz_sensor = len(grid.sensors)
-    kappa_int = theta_mod[:sz_int]
-    kappa_bdy = theta_mod[sz_int:sz_int+sz_bdy]
-    kappa_sensor = theta_mod[sz_int+sz_bdy:sz_int+sz_bdy+sz_sensor]
-    grad_kappa_x = theta_mod[sz_int+sz_bdy+sz_sensor:2*sz_int+sz_bdy+sz_sensor]
-    grad_kappa_y = theta_mod[2*sz_int+sz_bdy+sz_sensor:]
-    return kappa_int, kappa_bdy, kappa_sensor, grad_kappa_x, grad_kappa_y
+from .. import collocate, simulate
+from .shared import theta_to_a
 
 
-def construct_posterior(grid, op_system, theta, collocate_args, proposal_dot_mat, debug=False):
-    design_int = grid.interior
-    a_int, a_bdy, a_sensor, a_x, a_y = theta_to_a(theta,
-                                                  grid,
-                                                  proposal_dot_mat
-                                                  )
-
-    augmented_int = np.column_stack([design_int, a_int, a_x, a_y])
-    augmented_bdy = np.column_stack([grid.bdy, a_bdy, np.nan * np.zeros((a_bdy.shape[0], 2))])
-    augmented_sens = np.column_stack([grid.sensors, a_sensor, np.nan * np.zeros((a_sensor.shape[0], 2))])
-    obs = [
-        (augmented_int, None),
-        (augmented_bdy, None),
-        (augmented_sensor, None)
-    ]
-    posterior = bpdes.collocate(
-        op_system.operators,
-        op_system.operators_bar,
-        obs,
-        op_system,
-        collocate_args,
-        inverter='np'
-    )
-    return posterior
-
-def construct_c_posterior(locations, grid, theta, collocate_args, proposal_dot_mat, debug=False):
+def construct_posterior(locations, grid, theta, collocate_args, proposal_dot_mat, debug=False):
     a_int, a_bdy, a_sensor, a_x, a_y = theta_to_a(theta,
                                                   grid,
                                                   proposal_dot_mat
@@ -73,49 +24,8 @@ def construct_c_posterior(locations, grid, theta, collocate_args, proposal_dot_m
     )
     return mu_mult, Sigma
 
-def phi(grid, op_system, theta, likelihood_variance, pattern, data, collocate_args, proposal_dot_mat, use_c=False, debug=False):
-    # first solve forward
-    design_int = grid.interior_plus_boundary
-    # now determine voltage at the sensor locations
-    # we have seven observations so take one for each sensor other than sensor 1, the reference sensor
-    augmented_locations = np.column_stack([grid.sensors, np.nan * np.zeros((8, 3))])
 
-    if use_c:
-        mu_mult, Sigma = construct_c_posterior(augmented_locations, grid, theta, collocate_args, proposal_dot_mat, debug=debug)
-    else:
-        posterior = construct_posterior(grid, op_system, theta, collocate_args, proposal_dot_mat, debug=debug)
-        mu_mult, Sigma = posterior.no_obs_posterior(augmented_locations)
-
-    
-
-    # now need to iterate the stim patterns and compute the residual
-    rhs_int = np.zeros((len(design_int), 1))
-
-    Sigma_obs = np.dot(pattern.meas_pattern, np.dot(Sigma, pattern.meas_pattern.T))
-    likelihood_cov = Sigma_obs + likelihood_variance * np.eye(Sigma_obs.shape[0])
-    # likelihood_cov = likelihood_variance*np.eye(Sigma_obs.shape[0])
-    likelihood_dist = stats.multivariate_normal(np.zeros(Sigma_obs.shape[0]), likelihood_cov)
-
-    if debug:
-        print(likelihood_cov)
-
-    likelihood = 0
-    for voltage, current in zip(data, pattern.stim_pattern):
-        rhs_bdy = current[:, None]
-        rhs = np.row_stack([rhs_int, rhs_bdy])
-
-        model_voltage = np.dot(pattern.meas_pattern, np.dot(mu_mult, rhs))
-
-        residual = voltage.ravel() - model_voltage.ravel()
-        this_likelihood = likelihood_dist.logpdf(residual)
-        if debug:
-            with printoptions(precision=4, suppress=True):
-                print("Model | True| Residual | Diag(cov)\n {}".format(np.c_[model_voltage, voltage, residual, np.diag(likelihood_cov)]))
-            print("Likelihood: {}   |   Residual: {}".format(this_likelihood, np.abs(residual).sum()))
-        likelihood += this_likelihood
-    return -likelihood
-
-def phi_c(grid, theta, likelihood_variance, pattern, data, collocate_args, proposal_dot_mat, bayesian=True, debug=False):
+def phi(grid, theta, likelihood_variance, pattern, data, collocate_args, proposal_dot_mat, bayesian=True, debug=False):
     return -collocate.log_likelihood(
         np.asfortranarray(grid.interior),
         np.asfortranarray(grid.boundary),
@@ -130,7 +40,9 @@ def phi_c(grid, theta, likelihood_variance, pattern, data, collocate_args, propo
         bayesian=bayesian,
         debug=debug
     )
-def phi_c_tempered(grid, theta, likelihood_variance, pattern, data_1, data_2, temp, collocate_args, proposal_dot_mat, bayesian=True, debug=False):
+
+
+def phi_tempered(grid, theta, likelihood_variance, pattern, data_1, data_2, temp, collocate_args, proposal_dot_mat, bayesian=True, debug=False):
     return -collocate.log_likelihood_tempered(
         np.asfortranarray(grid.interior),
         np.asfortranarray(grid.boundary),
@@ -148,6 +60,7 @@ def phi_c_tempered(grid, theta, likelihood_variance, pattern, data_1, data_2, te
         debug=debug
     )
 
+
 class PCNKernel_C(object):
     def __init__(self, beta, prior_mean, sqrt_prior_cov, grid, likelihood_variance, pattern, data, collocate_args, proposal_dot_mat):
         self.__beta__ = beta
@@ -163,7 +76,7 @@ class PCNKernel_C(object):
 
 
     def phi(self, theta, collocate_args=None, bayesian=True, debug=False):
-        return phi_c(
+        return phi(
             self.__grid__,
             theta,
             self.__likelihood_variance__,
@@ -176,7 +89,7 @@ class PCNKernel_C(object):
         )
 
     def get_posterior(self, theta, locations, stim=None):
-        mu_mult, cov = construct_c_posterior(
+        mu_mult, cov = construct_posterior(
             locations, 
             self.__grid__, 
             theta, 
@@ -213,6 +126,7 @@ class PCNKernel_C(object):
             bayesian=bayesian
         )
 
+
 class PCNTemperingKernel_C(object):
     def __init__(self, beta, prior_mean, sqrt_prior_cov, grid, likelihood_variance, pattern, data_1, data_2, temp, collocate_args, proposal_dot_mat):
         self.__beta__ = beta
@@ -228,7 +142,7 @@ class PCNTemperingKernel_C(object):
         self.__proposal_dot_mat__ = proposal_dot_mat
 
     def phi(self, theta, bayesian=True, debug=False):
-        return phi_c_tempered(
+        return phi_tempered(
             self.__grid__,
             theta,
             self.__likelihood_variance__,
@@ -243,7 +157,7 @@ class PCNTemperingKernel_C(object):
         )
 
     def get_posterior(self, theta, locations):
-        return construct_c_posterior(
+        return construct_posterior(
             locations, 
             self.__grid__, 
             theta, 
