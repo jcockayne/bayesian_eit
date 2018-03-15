@@ -1,0 +1,13 @@
+version: '3'
+services:
+  rabbitmq:
+    image: rabbitmq:alpine
+    expose:
+      - 5672 
+  worker:
+    build: containers/worker/
+    command: rabbitmq 4
+    depends_on: 
+      - "rabbitmq"
+    environment:
+      - PYTHONUNBUFFERED=1

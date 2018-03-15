@@ -1,0 +1,4 @@
+FROM bayesian_eit:base
+
+ENTRYPOINT ["python3", "/app/python/scripts/run.py"]
+CMD []

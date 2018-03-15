@@ -1,6 +1,7 @@
-.PHONY: clean build
+.PHONY: clean build containers
 
 DEBUG=FALSE
+PYTHON?=python
 
 ifeq ($(DEBUG),TRUE)
 	CMAKE_CUSTOM_FLAGS="-DCMAKE_BUILD_TYPE=Debug"
@@ -17,4 +18,8 @@ clean:
 
 build:
 	cd cpp/build && $(MAKE)
-	cd python && python setup.py clean --all develop
+	cd python && $(PYTHON) setup.py clean --all develop
+
+containers:
+	docker build -t bayesian_eit:base -f containers/base/dockerfile .
+	docker build -t bayesian_eit:worker -f containers/worker/dockerfile .

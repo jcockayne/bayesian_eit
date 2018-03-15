@@ -1,0 +1,15 @@
+FROM ubuntu:17.10
+
+RUN apt-get update
+RUN apt-get install -y gcc cmake libeigen3-dev
+RUN apt-get install -y python3-pip
+
+WORKDIR /app
+
+RUN pip3 install --upgrade pip setuptools
+RUN pip3 install --no-cache-dir numpy scipy cython pika
+RUN pip3 install --no-cache-dir eigency
+
+COPY . .
+
+RUN export PYTHON=python3 && make rebuild -j8
