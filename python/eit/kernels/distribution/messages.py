@@ -4,6 +4,19 @@ def deserialize(message):
     return pickle.loads(message)
 
 
+def serialize(message):
+    return pickle.dumps(message)
+
+
+class ApplyKernel(object):
+    def __init__(self, kernel_id, kappa_0, n_iter, beta=None, bayesian=True):
+        self.kernel_id = kernel_id
+        self.kappa_0 = kappa_0
+        self.n_iter = n_iter
+        self.beta = beta
+        self.bayesian = bayesian
+
+
 class ClearKernels(object):
     def __init__(self, run_id=None):
         self.run_id = run_id
