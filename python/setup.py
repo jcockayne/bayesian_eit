@@ -51,7 +51,7 @@ setup(
     author='benorn',
     author_email='',
     description='',
-    requires=['numpy'],
+    requires=['numpy', 'cython', 'eigency'],
     ext_modules=cythonize([
         Extension('*',
                   ['eit/*.pyx'],
